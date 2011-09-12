@@ -1,4 +1,4 @@
-from distutils.core import setup #, Extension
+from setuptools import setup #, Extension
 import os, os.path
 import re
 
@@ -15,4 +15,6 @@ setup(name='bovy_mcmc',
       url='https://github.com/jobovy/bovy_mcmc',
       package_dir = {'bovy_mcmc/': ''},
       packages=['bovy_mcmc'],
+      dependency_links = ['https://github.com/dfm/MarkovPy/tarball/master#egg=MarkovPy'],
+      install_requires=['MarkovPy']
       )

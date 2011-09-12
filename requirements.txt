@@ -1,1 +1,1 @@
--e git://github.com/dfm/MarkovPy.git#egg=MarkovPy
+git+git://github.com/dfm/MarkovPy.git#egg=MarkovPy
