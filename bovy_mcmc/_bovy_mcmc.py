@@ -211,6 +211,11 @@ def slice_double(x,u,step,lnpdf,pdf_params,isDomainFinite,domain):
                 logpxr= u-1
             else:
                 logpxr= lnpdf(xr,*pdf_params)
+    else:
+        if isDomainFinite[0] and xl < domain[0]:
+            xl= domain[0]
+        if isDomainFinite[1] and xr > domain[1]:
+            xr= domain[1]
     return (xl,xr)
     
 def slice_step_out(x,u,step,lnpdf,pdf_params,isDomainFinite,domain):
@@ -240,11 +245,17 @@ def slice_step_out(x,u,step,lnpdf,pdf_params,isDomainFinite,domain):
         if isDomainFinite[0] and xl < domain[0]:
             xl= domain[0]
             break
+    else:
+        if isDomainFinite[0] and xl < domain[0]:
+            xl= domain[0]
     while lnpdf(xr,*pdf_params) > u:
         xr+= step
         if isDomainFinite[1] and xr > domain[1]:
             xr= domain[1]
             break
+    else:
+        if isDomainFinite[1] and xr > domain[1]:
+            xr= domain[1]
     return (xl,xr)
 
 def slice_whole(x,u,step,lnpdf,pdf_params,isDomainFinite,domain):
