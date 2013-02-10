@@ -1,3 +1,4 @@
+import copy
 import numpy
 from scipy import stats
 import _bovy_mcmc as bovy_mcmc_oned
@@ -10,10 +11,11 @@ except ImportError:
 def sample_gaussian_proposal(mean,stddev):
     return stats.norm.rvs()*stddev+mean
 def eval_ln_gaussian_proposal(new,old,stddev):
-    return -0.5*sc.log(2.*sc.pi*stddev**2.)-0.5*(old-new)**2./stddev**2.
+    return -0.5*numpy.log(2.*numpy.pi*stddev**2.)-0.5*(old-new)**2./stddev**2.
 def markovpy(initial_theta,step,lnpdf,pdf_params,
              isDomainFinite=[False,False],domain=[0.,0.],
-             nsamples=1,nwalkers=None,threads=None):
+             nsamples=1,nwalkers=None,threads=None,
+             sliceinit=False,skip=0):
     """
     NAME:
        markovpy
@@ -29,6 +31,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
        threads - number of threads to use
        isDomainFinite - is the domain finite? [bool,bool]
        domain - the domain if it is finite (has no effect if the domain is not finite)
+       sliceinit= if True, initialize by doing slice sampling
+       skip= number of samples to skip when initializing using slice sampling
     OUTPUT:
        list of samples, number if nsamples=1
     REVISION HISTORY:
@@ -43,9 +47,9 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> domain= [0.,0.]
     >>> nsamples= 200000
     >>> nwalkers= None
-    >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1)
+    >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1,sliceinit=True,skip=20)
     >>> samples= samples[nsamples/2:-1] #discard burn-in
-    >>> logprecision= -2.
+    >>> logprecision= -1.
     >>> assert (nu.mean(samples)-0.)**2. < 10.**(logprecision*2.)
     >>> assert (nu.std(samples)-1.)**2. < 10.**(logprecision*2.)
     >>> from scipy import stats
@@ -65,7 +69,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> nsamples= 200000
     >>> samples= markovpy(nu.array([0.1,0.1]),1.,lnpdf,pdf_params,
     ...        isDomainFinite,domain,
-    ...        nsamples=nsamples)
+    ...        nsamples=nsamples,sliceinit=True)
     >>> samples= nu.array(samples)
     >>> logprecision= -1.5
     >>> assert (nu.mean(samples[:,0])-0.)**2. < 10.**(logprecision*2.)
@@ -82,16 +86,15 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     if not _MARKOVPYENABLED:
         print "'markovy' import failed ..."
         return None
-    lambdafunc= lambda x: lnpdf(x,*pdf_params)
     try:
         ndim = len(initial_theta)
     except TypeError:
         ndim= 1
-        initial_theta= numpy.array([initial_theta])
-        isDomainFinite= [isDomainFinite]
-        domain= [domain]
-        step= [step]
-        lambdafunc= lambda x: lnpdf(x[0],*pdf_params)
+        if not sliceinit:
+            initial_theta= numpy.array([initial_theta])
+            isDomainFinite= [isDomainFinite]
+            domain= [domain]
+            step= [step]
     if not isinstance(isDomainFinite,numpy.ndarray):
         isDomainFinite= numpy.array(isDomainFinite)
     if not isinstance(domain,numpy.ndarray):
@@ -99,12 +102,12 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     if isinstance(step,list): step= numpy.array(step)
     if isinstance(step,(int,float)) or len(step) == 1:
         step= numpy.ones(ndim)*step
-    if len(isDomainFinite.shape) == 1:
+    if len(isDomainFinite.shape) == 1 and ndim > 1 and not sliceinit:
         dFinite= []
         for ii in range(ndim):
             dFinite.append(isDomainFinite)
         isDomainFinite= dFinite
-    if len(domain.shape) == 1:
+    if len(domain.shape) == 1 and ndim > 1 and not sliceinit:
         dDomain= []
         for ii in range(ndim):
             dDomain.append(domain)
@@ -115,22 +118,34 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     if threads is None:
         threads= 1
     nmarkovsamples= int(numpy.ceil(float(nsamples)/nwalkers))
+    #Set up initial position
+    initial_position= []
+    for ww in range(nwalkers):
+        if sliceinit:
+            thisparams= slice(initial_theta,step,lnpdf,pdf_params,
+                              create_method='step_out',
+                              isDomainFinite=isDomainFinite,domain=domain,
+                              nsamples=1+skip)
+            if skip > 0: thisparams= thisparams[-1]
+            if ndim == 1:
+                thisparams= numpy.array([float(thisparams)])
+            initial_theta= copy.copy(thisparams)
+        else:
+            thisparams= []
+            for pp in range(ndim):
+                prop= initial_theta[pp]+numpy.random.normal()*step[pp]
+                if (isDomainFinite[pp][0] and prop < domain[pp][0]):
+                    prop= domain[pp][0]
+                elif (isDomainFinite[pp][1] and prop > domain[pp][1]):
+                    prop= domain[pp][1]
+                thisparams.append(prop)
+        initial_position.append(numpy.array(thisparams))
+    if ndim == 1: lambdafunc= lambda x: lnpdf(x[0],*pdf_params)
+    else: lambdafunc= lambda x: lnpdf(x,*pdf_params)
     #Set up sampler
     sampler = mpy.EnsembleSampler(nwalkers,ndim,
                                   lambdafunc,
                                   threads=threads)
-    #Set up initial position
-    initial_position= []
-    for ww in range(nwalkers):
-        thisparams= []
-        for pp in range(ndim):
-            prop= initial_theta[pp]+numpy.random.normal()*step[pp]
-            if (isDomainFinite[pp][0] and prop < domain[pp][0]):
-                prop= domain[pp][0]
-            elif (isDomainFinite[pp][1] and prop > domain[pp][1]):
-                prop= domain[pp][1]
-            thisparams.append(prop)
-        initial_position.append(numpy.array(thisparams))
     #Sample
     pos, prob, state= sampler.run_mcmc(initial_position,
                                        numpy.random.mtrand.RandomState().get_state(),
