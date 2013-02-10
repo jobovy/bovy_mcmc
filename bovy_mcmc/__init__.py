@@ -15,7 +15,8 @@ def eval_ln_gaussian_proposal(new,old,stddev):
 def markovpy(initial_theta,step,lnpdf,pdf_params,
              isDomainFinite=[False,False],domain=[0.,0.],
              nsamples=1,nwalkers=None,threads=None,
-             sliceinit=False,skip=0,returnLnprob=False):
+             sliceinit=False,skip=0,create_method='step_out',
+             returnLnprob=False):
     """
     NAME:
        markovpy
@@ -33,6 +34,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
        domain - the domain if it is finite (has no effect if the domain is not finite)
        sliceinit= if True, initialize by doing slice sampling
        skip= number of samples to skip when initializing using slice sampling
+       create_method= create method for initial slice sampling
        returnLnprob= if True, return the log probabilities for all returned samples
     OUTPUT:
        list of samples, number if nsamples=1
@@ -124,7 +126,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     for ww in range(nwalkers):
         if sliceinit:
             thisparams= slice(initial_theta,step,lnpdf,pdf_params,
-                              create_method='step_out',
+                              create_method=create_method,
                               isDomainFinite=isDomainFinite,domain=domain,
                               nsamples=1+skip)
             if skip > 0: thisparams= thisparams[-1]
