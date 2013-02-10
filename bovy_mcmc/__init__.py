@@ -196,6 +196,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
             if returnLnprob:
                 lnps.append(lnp[ww,ss])
     if len(samples) > nsamples:
+        lnps= lnps[-nsamples:len(samples)]
         samples= samples[-nsamples:len(samples)]
     if nsamples == 1 and returnLnprob:
         return (samples[0],lnps[0])
