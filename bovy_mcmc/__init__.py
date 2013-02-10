@@ -55,7 +55,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> isDomainFinite= [False,False]
     >>> domain= [0.,0.]
     >>> nsamples= 200000
-    >>> nwalkers= 6
+    >>> nwalkers= None
     >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1,sliceinit=True,skip=20,_use_emcee=True)
     >>> samples= samples[nsamples/2:-1] #discard burn-in
     >>> logprecision= -1.
@@ -127,9 +127,9 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     #Set-up walkers
     if nwalkers is None:
         if _use_emcee:
-            nwalkers = numpy.amax([5,2*ndim])
-        else:
             nwalkers = numpy.amax([6,2*ndim+2])
+        else:
+            nwalkers = numpy.amax([5,2*ndim])
     if threads is None:
         threads= 1
     nmarkovsamples= int(numpy.ceil(float(nsamples)/nwalkers))
