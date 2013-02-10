@@ -16,5 +16,5 @@ setup(name='bovy_mcmc',
       package_dir = {'bovy_mcmc/': ''},
       packages=['bovy_mcmc'],
       dependency_links = ['https://github.com/dfm/MarkovPy/tarball/master#egg=MarkovPy'],
-      install_requires=['MarkovPy','numpy','scipy']
+      install_requires=['MarkovPy','numpy','scipy','emcee']
       )
