@@ -15,7 +15,7 @@ def eval_ln_gaussian_proposal(new,old,stddev):
 def markovpy(initial_theta,step,lnpdf,pdf_params,
              isDomainFinite=[False,False],domain=[0.,0.],
              nsamples=1,nwalkers=None,threads=None,
-             sliceinit=False,skip=0):
+             sliceinit=False,skip=0,returnLnprob=False):
     """
     NAME:
        markovpy
@@ -33,6 +33,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
        domain - the domain if it is finite (has no effect if the domain is not finite)
        sliceinit= if True, initialize by doing slice sampling
        skip= number of samples to skip when initializing using slice sampling
+       returnLnprob= if True, return the log probabilities for all returned samples
     OUTPUT:
        list of samples, number if nsamples=1
     REVISION HISTORY:
@@ -152,6 +153,9 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
                                        nmarkovsamples)
     #Get chain
     chain= sampler.get_chain()
+    if returnLnprob:
+        lnp= sampler.get_lnprobability()
+        lnps= []
     samples= []
     for ww in range(nwalkers):
         for ss in range(nmarkovsamples):
@@ -159,10 +163,16 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
             for pp in range(ndim):
                 thisparams.append(chain[ww,pp,ss])
             samples.append(numpy.array(thisparams))
+            if returnLnprob:
+                lnps.append(lnp[ww,ss])
     if len(samples) > nsamples:
         samples= samples[-nsamples:len(samples)]
-    if nsamples == 1:
+    if nsamples == 1 and returnLnprob:
+        return (samples[0],lnps[0])
+    elif nsamples == 1:
         return samples[0]
+    elif returnLnprob:
+        return (samples,lnps)
     else:
         return samples
 
