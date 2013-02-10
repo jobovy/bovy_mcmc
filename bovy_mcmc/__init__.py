@@ -8,6 +8,11 @@ try:
     _MARKOVPYENABLED= True
 except ImportError:
     _MARKOVPYENABLED= False
+try:
+    import emcee
+    _EMCEEENABLED= True
+except ImportError:
+    _EMCEEENABLED= False
 def sample_gaussian_proposal(mean,stddev):
     return stats.norm.rvs()*stddev+mean
 def eval_ln_gaussian_proposal(new,old,stddev):
@@ -16,7 +21,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
              isDomainFinite=[False,False],domain=[0.,0.],
              nsamples=1,nwalkers=None,threads=None,
              sliceinit=False,skip=0,create_method='step_out',
-             returnLnprob=False):
+             returnLnprob=False,
+             _use_emcee=False):
     """
     NAME:
        markovpy
@@ -49,8 +55,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> isDomainFinite= [False,False]
     >>> domain= [0.,0.]
     >>> nsamples= 200000
-    >>> nwalkers= None
-    >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1,sliceinit=True,skip=20)
+    >>> nwalkers= 6
+    >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1,sliceinit=True,skip=20,_use_emcee=True)
     >>> samples= samples[nsamples/2:-1] #discard burn-in
     >>> logprecision= -1.
     >>> assert (nu.mean(samples)-0.)**2. < 10.**(logprecision*2.)
@@ -86,8 +92,11 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> assert (stats.moment(samples[:,1]/2.,4)-stats.norm.moment(4))**2. < 10.**(logprecision)
     >>> assert (nu.corrcoef(samples.T)[0,1]-0.5)**2. < 10.**(logprecision)
     """
-    if not _MARKOVPYENABLED:
+    if not _MARKOVPYENABLED and not _use_emcee:
         print "'markovy' import failed ..."
+        return None
+    elif not _EMCEEENABLED and _use_emcee:
+        print "'emcee' import failed ..."
         return None
     try:
         ndim = len(initial_theta)
@@ -117,7 +126,10 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
         domain= dDomain
     #Set-up walkers
     if nwalkers is None:
-        nwalkers = numpy.amax([5,2*ndim])
+        if _use_emcee:
+            nwalkers = numpy.amax([5,2*ndim])
+        else:
+            nwalkers = numpy.amax([6,2*ndim+2])
     if threads is None:
         threads= 1
     nmarkovsamples= int(numpy.ceil(float(nsamples)/nwalkers))
@@ -146,24 +158,40 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     if ndim == 1: lambdafunc= lambda x: lnpdf(x[0],*pdf_params)
     else: lambdafunc= lambda x: lnpdf(x,*pdf_params)
     #Set up sampler
-    sampler = mpy.EnsembleSampler(nwalkers,ndim,
-                                  lambdafunc,
-                                  threads=threads)
-    #Sample
-    pos, prob, state= sampler.run_mcmc(initial_position,
-                                       numpy.random.mtrand.RandomState().get_state(),
-                                       nmarkovsamples)
-    #Get chain
-    chain= sampler.get_chain()
+    if _use_emcee:
+        sampler = emcee.EnsembleSampler(nwalkers,ndim,
+                                        lambdafunc,
+                                        threads=threads)
+        #Sample
+        pos, prob, state= sampler.run_mcmc(initial_position,nmarkovsamples,
+                                           rstate0=numpy.random.mtrand.RandomState().get_state())
+        #Get chain
+        chain= sampler.chain
+    else:
+        sampler = mpy.EnsembleSampler(nwalkers,ndim,
+                                      lambdafunc,
+                                      threads=threads)
+        #Sample
+        pos, prob, state= sampler.run_mcmc(initial_position,
+                                           numpy.random.mtrand.RandomState().get_state(),
+                                           nmarkovsamples)
+        #Get chain
+        chain= sampler.get_chain()
     if returnLnprob:
-        lnp= sampler.get_lnprobability()
+        if _use_emcee:
+            lnp= sampler.lnprobability()
+        else:
+            lnp= sampler.get_lnprobability()
         lnps= []
     samples= []
     for ww in range(nwalkers):
         for ss in range(nmarkovsamples):
             thisparams= []
             for pp in range(ndim):
-                thisparams.append(chain[ww,pp,ss])
+                if _use_emcee:
+                    thisparams.append(chain[ww,ss,pp])
+                else:
+                    thisparams.append(chain[ww,pp,ss])
             samples.append(numpy.array(thisparams))
             if returnLnprob:
                 lnps.append(lnp[ww,ss])
