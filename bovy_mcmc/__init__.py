@@ -124,6 +124,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
         for ii in range(ndim):
             dDomain.append(domain)
         domain= dDomain
+    if ndim == 1: lambdafunc= lambda x: lnpdf(x[0],*pdf_params)
+    else: lambdafunc= lambda x: lnpdf(x,*pdf_params)
     #Set-up walkers
     if nwalkers is None:
         if _use_emcee:
@@ -158,11 +160,9 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
                     elif (isDomainFinite[pp][1] and prop > domain[pp][1]):
                         prop= domain[pp][1]
                     thisparams.append(prop)
-                tlnp= lnpdf(prop,*pdf_params)
+                tlnp= lambdafunc(numpy.array(thisparams))
             lnprobs.append(tlnp)
         initial_position.append(numpy.array(thisparams))
-    if ndim == 1: lambdafunc= lambda x: lnpdf(x[0],*pdf_params)
-    else: lambdafunc= lambda x: lnpdf(x,*pdf_params)
     if not lnprobs is None: lnprobs= numpy.array(lnprobs)
     #Set up sampler
     if _use_emcee:
