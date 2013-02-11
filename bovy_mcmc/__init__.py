@@ -56,7 +56,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> domain= [0.,0.]
     >>> nsamples= 200000
     >>> nwalkers= None
-    >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1,sliceinit=True,skip=20,_use_emcee=True)
+    >>> samples= markovpy(0.1,.05,lngaussian,pdf_params,isDomainFinite,domain,nsamples=nsamples,nwalkers=nwalkers,threads=1,sliceinit=False,skip=20,_use_emcee=False)
     >>> samples= samples[nsamples/2:-1] #discard burn-in
     >>> logprecision= -1.
     >>> assert (nu.mean(samples)-0.)**2. < 10.**(logprecision*2.)
@@ -78,7 +78,7 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> nsamples= 200000
     >>> samples= markovpy(nu.array([0.1,0.1]),1.,lnpdf,pdf_params,
     ...        isDomainFinite,domain,
-    ...        nsamples=nsamples,sliceinit=True)
+    ...        nsamples=nsamples,sliceinit=False)
     >>> samples= nu.array(samples)
     >>> logprecision= -1.5
     >>> assert (nu.mean(samples[:,0])-0.)**2. < 10.**(logprecision*2.)
@@ -135,8 +135,10 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     nmarkovsamples= int(numpy.ceil(float(nsamples)/nwalkers))
     #Set up initial position
     initial_position= []
+    lnprobs= []
     for ww in range(nwalkers):
         if sliceinit:
+            lnprobs= None
             thisparams= slice(initial_theta,step,lnpdf,pdf_params,
                               create_method=create_method,
                               isDomainFinite=isDomainFinite,domain=domain,
@@ -146,17 +148,22 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
                 thisparams= numpy.array([float(thisparams)])
             initial_theta= copy.copy(thisparams)
         else:
-            thisparams= []
-            for pp in range(ndim):
-                prop= initial_theta[pp]+numpy.random.normal()*step[pp]
-                if (isDomainFinite[pp][0] and prop < domain[pp][0]):
-                    prop= domain[pp][0]
-                elif (isDomainFinite[pp][1] and prop > domain[pp][1]):
-                    prop= domain[pp][1]
-                thisparams.append(prop)
+            tlnp= -numpy.finfo(numpy.dtype(numpy.float64)).max
+            while tlnp == -numpy.finfo(numpy.dtype(numpy.float64)).max:
+                thisparams= []
+                for pp in range(ndim):
+                    prop= initial_theta[pp]+numpy.random.normal()*step[pp]
+                    if (isDomainFinite[pp][0] and prop < domain[pp][0]):
+                        prop= domain[pp][0]
+                    elif (isDomainFinite[pp][1] and prop > domain[pp][1]):
+                        prop= domain[pp][1]
+                    thisparams.append(prop)
+                tlnp= lnpdf(prop,*pdf_params)
+            lnprobs.append(tlnp)
         initial_position.append(numpy.array(thisparams))
     if ndim == 1: lambdafunc= lambda x: lnpdf(x[0],*pdf_params)
     else: lambdafunc= lambda x: lnpdf(x,*pdf_params)
+    if not lnprobs is None: lnprobs= numpy.array(lnprobs)
     #Set up sampler
     if _use_emcee:
         sampler = emcee.EnsembleSampler(nwalkers,ndim,
@@ -164,7 +171,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
                                         threads=threads)
         #Sample
         pos, prob, state= sampler.run_mcmc(initial_position,nmarkovsamples,
-                                           rstate0=numpy.random.mtrand.RandomState().get_state())
+                                           rstate0=numpy.random.mtrand.RandomState().get_state(),
+                                           lnprob0=lnprobs)
         #Get chain
         chain= sampler.chain
     else:
@@ -174,7 +182,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
         #Sample
         pos, prob, state= sampler.run_mcmc(initial_position,
                                            numpy.random.mtrand.RandomState().get_state(),
-                                           nmarkovsamples)
+                                           nmarkovsamples,
+                                           lnprobinit=lnprobs)
         #Get chain
         chain= sampler.get_chain()
     if returnLnprob:
@@ -196,7 +205,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
             if returnLnprob:
                 lnps.append(lnp[ww,ss])
     if len(samples) > nsamples:
-        lnps= lnps[-nsamples:len(samples)]
+        if returnLnprob:
+            lnps= lnps[-nsamples:len(samples)]
         samples= samples[-nsamples:len(samples)]
     if nsamples == 1 and returnLnprob:
         return (samples[0],lnps[0])
