@@ -193,8 +193,8 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
             lnp= sampler.get_lnprobability()
         lnps= []
     samples= []
-    for ww in range(nwalkers):
-        for ss in range(nmarkovsamples):
+    for ss in range(nmarkovsamples):
+        for ww in range(nwalkers):
             thisparams= []
             for pp in range(ndim):
                 if _use_emcee:
