@@ -36,7 +36,7 @@ def elliptical_slice(initial_theta,prior,lnpdf,pdf_params=(),
         nu= prior
     else: #prior = cholesky decomp
         if not prior.shape[0] == D or not prior.shape[1] == D:
-            raise InputError("Prior must be given by a D-element sample or DxD chol(Sigma)")
+            raise IOError("Prior must be given by a D-element sample or DxD chol(Sigma)")
         nu= numpy.dot(prior,numpy.random.normal(size=D))
     hh = math.log(numpy.random.uniform()) + cur_lnpdf
 
@@ -49,7 +49,7 @@ def elliptical_slice(initial_theta,prior,lnpdf,pdf_params=(),
         phi_max= phi
     else:
         # Randomly center bracket on current point
-        phi_min= -angle_rangle*nupy.random.uniform()
+        phi_min= -angle_range*numpy.random.uniform()
         phi_max= phi_min + angle_range
         phi= numpy.random.uniform()*(phi_max-phi_min)+phi_min
 
@@ -67,7 +67,8 @@ def elliptical_slice(initial_theta,prior,lnpdf,pdf_params=(),
         elif phi < 0:
             phi_min = phi
         else:
-            raise Error('BUG DETECTED: Shrunk to current position and still not acceptable.')
+            print hh, cur_lnpdf
+            raise RuntimeError('BUG DETECTED: Shrunk to current position and still not acceptable.')
         # Propose new angle difference
         phi = numpy.random.uniform()*(phi_max - phi_min) + phi_min
     return (xx_prop,cur_lnpdf)
