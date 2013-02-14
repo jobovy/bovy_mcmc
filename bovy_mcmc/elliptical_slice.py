@@ -67,7 +67,6 @@ def elliptical_slice(initial_theta,prior,lnpdf,pdf_params=(),
         elif phi < 0:
             phi_min = phi
         else:
-            print hh, cur_lnpdf
             raise RuntimeError('BUG DETECTED: Shrunk to current position and still not acceptable.')
         # Propose new angle difference
         phi = numpy.random.uniform()*(phi_max - phi_min) + phi_min
