@@ -1,8 +1,8 @@
 import copy
 import numpy
 from scipy import stats
-import _bovy_mcmc as bovy_mcmc_oned
-import _bovy_mv_mcmc as bovy_mcmc_multid
+from . import _bovy_mcmc as bovy_mcmc_oned
+from . import _bovy_mv_mcmc as bovy_mcmc_multid
 try:
     import markovpy as mpy
     _MARKOVPYENABLED= True
@@ -93,10 +93,10 @@ def markovpy(initial_theta,step,lnpdf,pdf_params,
     >>> assert (nu.corrcoef(samples.T)[0,1]-0.5)**2. < 10.**(logprecision)
     """
     if not _MARKOVPYENABLED and not _use_emcee:
-        print "'markovy' import failed ..."
+        print("'markovy' import failed ...")
         return None
     elif not _EMCEEENABLED and _use_emcee:
-        print "'emcee' import failed ..."
+        print("'emcee' import failed ...")
         return None
     try:
         ndim = len(initial_theta)
@@ -273,19 +273,19 @@ def metropolis(initial_theta,proposal_params,lnpdf,pdf_params,symmetric=False,
        metropolis mcmc
     INPUT:
        initial_theta - initial sample
-       proposal_params - parameters for the proposal function 
+       proposal_params - parameters for the proposal function
                          (e.g., typical steps)
-                         (single for all dimensions or list of 
+                         (single for all dimensions or list of
                          functions)
        lnpdf - function evaluating the log of the pdf to be sampled
        pdf_params - parameters to pass to the pdf (tuple)
-       sample_proposal - given x and proposal_params, sample a proposal 
+       sample_proposal - given x and proposal_params, sample a proposal
                          using this function DEFAULT: GAUSSIAN
-                         (single function for all dimensions or list of 
+                         (single function for all dimensions or list of
                          functions)
-       eval_ln_proposal - given x and proposal_params, evaluate the log of 
+       eval_ln_proposal - given x and proposal_params, evaluate the log of
                           the proposal density DEFAULT: GAUSSIAN
-                         (single function for all dimensions or list of 
+                         (single function for all dimensions or list of
                          functions)
        symmetric - (bool) if True, the proposal distribution is symmetric and will not be evaluated (bool or list of bools
        randomize_directions - (bool) pick a random coordinate to update

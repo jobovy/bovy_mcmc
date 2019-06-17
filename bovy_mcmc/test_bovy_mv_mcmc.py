@@ -115,7 +115,7 @@ def test_slice(initial_theta,step,lnpdf,pdf_params,create_method,randomize_direc
     #First marginal
     thishistx=hist(samples[nsamples/2:-1,0],bins=.2*sc.sqrt(nsamples),ec='k',fc='None',normed=True)
     thishisty=hist(samples[nsamples/2:-1,1],bins=.2*sc.sqrt(nsamples),ec='k',fc='None',normed=True)
-    print "Plotting..."
+    print("Plotting...")
     nabcissae= 101
     abcissaex= sc.linspace(thishistx[1][0],thishistx[1][-1],nabcissae)
     abcissaey= sc.linspace(thishisty[1][0],thishisty[1][-1],nabcissae)
@@ -155,11 +155,11 @@ def test_slice(initial_theta,step,lnpdf,pdf_params,create_method,randomize_direc
     basefilename=plotfilename.split('.')
     thisplotfilename=basefilename[0]+'_y.'+basefilename[1]
     savefig(thisplotfilename,format='png')
-    
+
 
 if __name__=='__main__':
     if sys.argv[1] == 'slice':
-        print "Testing slice sampling..."
+        print("Testing slice sampling...")
         if sys.argv[2] == 'gaussian':
             lnpdf= lngaussian
             mean= sc.array([0.,0.])
