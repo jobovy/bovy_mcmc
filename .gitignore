@@ -42,3 +42,4 @@ Thumbs.db
 build/
 dist/
 bovy_mcmc.egg-info/
+*.ftpconfig

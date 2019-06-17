@@ -1,7 +1,7 @@
 import copy
 import scipy as sc
 import scipy.stats as stats
-import _bovy_mcmc as oned_mcmc
+from . import _bovy_mcmc as oned_mcmc
 ##############################################################################
 #
 #  bovy_mv_mcmc.py: general multivariate mcmc methods based on 1D methods in
@@ -42,7 +42,7 @@ def slice(initial_theta,step,lnpdf,pdf_params,create_method='step_out',randomize
     INPUT:
        initial_theta - ([k]) initial sample
        step - (1 or [k]) stepping out step w
-       lnpdf - function evaluating the log of the pdf to be sampled, 
+       lnpdf - function evaluating the log of the pdf to be sampled,
                arguments are initial_theta + pdf_params
        pdf_params - parameters to pass to the pdf
        create_method - 'step_out', 'double', or whole (string or array of D strings)
@@ -109,7 +109,7 @@ def slice(initial_theta,step,lnpdf,pdf_params,create_method='step_out',randomize
     if not isinstance(create_method,list) or len(create_method) == 1:
         tmp_method= []
         for ii in range(d):
-            if isinstance(create_method,list): 
+            if isinstance(create_method,list):
                 tmp_method.append(create_method[0])
             else:
                 tmp_method.append(create_method)
@@ -148,17 +148,17 @@ def metropolis(initial_theta,sample_proposal,eval_ln_proposal,
        metropolis mcmc
     INPUT:
        initial_theta - initial sample
-       sample_proposal - given x and proposal_params, sample a proposal 
-                         using this function 
-                         (single function for all dimensions or list of 
+       sample_proposal - given x and proposal_params, sample a proposal
+                         using this function
+                         (single function for all dimensions or list of
                          functions)
-       eval_ln_proposal - given x and proposal_params, evaluate the log of 
+       eval_ln_proposal - given x and proposal_params, evaluate the log of
                           the proposal density
-                         (single function for all dimensions or list of 
+                         (single function for all dimensions or list of
                          functions)
-       proposal_params - parameters for the proposal function 
+       proposal_params - parameters for the proposal function
                          (e.g., typical steps)
-                         (single for all dimensions or list of 
+                         (single for all dimensions or list of
                          functions)
        lnpdf - function evaluating the log of the pdf to be sampled
        pdf_params - parameters to pass to the pdf (tuple)

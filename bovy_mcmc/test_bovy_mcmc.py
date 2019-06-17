@@ -190,7 +190,7 @@ def test_slice(initial_theta,step,lnpdf,pdf_params,create_method,isDomainFinite,
     yaxislabel+= ')$'
     ylabel(yaxislabel)
     savefig(plotfilename,format='png')
-    
+
 def test_metropolis(initial_theta,sample_proposal,eval_ln_proposal,proposal_params,
                     lnpdf,pdf_params,symmetric,plotfilename,nsamples=1000):
     """
@@ -214,7 +214,7 @@ def test_metropolis(initial_theta,sample_proposal,eval_ln_proposal,proposal_para
        2009-10-29 - Written - Bovy
     """
     (samples,faccept)= metropolis(initial_theta,sample_proposal,eval_ln_proposal,proposal_params,lnpdf,pdf_params,symmetric=symmetric,nsamples=nsamples)
-    print "%4.1f%% of the samples were accepted" % (100.*faccept)
+    print("%4.1f%% of the samples were accepted" % (100.*faccept))
     samples= sc.array(samples)
     fig_width=5
     fig_height=5
@@ -248,7 +248,7 @@ def test_metropolis(initial_theta,sample_proposal,eval_ln_proposal,proposal_para
     yaxislabel+= ')$'
     ylabel(yaxislabel)
     savefig(plotfilename,format='png')
-    
+
 def test_hmc(initial_theta,nleap,stepsize,obj_func,grad_func,func_params,
              plotfilename,nsamples=1000):
     """
@@ -262,7 +262,7 @@ def test_hmc(initial_theta,nleap,stepsize,obj_func,grad_func,func_params,
        stepsize - (double) size of the steps to take in the orbit integration
        obj_func - (function pointer) the objective function E(x,params) as in p(x) ~ exp(-E)
        grad_func - (function pointer) the gradient of the objective function gradE(x,params)
-       func_params - (tuple) the parameters of the objective function 
+       func_params - (tuple) the parameters of the objective function
        plotfilename - filename for plot
        nsamples - number of samples to use
     OUTPUT:
@@ -272,7 +272,7 @@ def test_hmc(initial_theta,nleap,stepsize,obj_func,grad_func,func_params,
     """
     (samples,faccept)= hmc(initial_theta,nleap,stepsize,obj_func,grad_func,
                  func_params,nsamples=nsamples)
-    print "%4.1f%% of the samples were accepted" % (100.*faccept)
+    print("%4.1f%% of the samples were accepted" % (100.*faccept))
     samples= sc.array(samples)
     fig_width=5
     fig_height=5
@@ -306,10 +306,10 @@ def test_hmc(initial_theta,nleap,stepsize,obj_func,grad_func,func_params,
     yaxislabel+= ')$'
     ylabel(yaxislabel)
     savefig(plotfilename,format='png')
-    
+
 if __name__=='__main__':
     if sys.argv[1] == 'slice':
-        print "Testing slice sampling..."
+        print("Testing slice sampling...")
         if sys.argv[2] == 'gaussian':
             lnpdf= lngaussian
             pdf_params= [0.,1.]
@@ -336,7 +336,7 @@ if __name__=='__main__':
         test_slice(0.1,1.,lnpdf,pdf_params,create_method,isDomainFinite,domain,
                    plotfilename=plotfilename,nsamples=10000)
     if sys.argv[1] == 'metropolis':
-        print "Testing Metropolis sampling..."
+        print("Testing Metropolis sampling...")
         if sys.argv[2] == 'gaussian':
             lnpdf= lngaussian
             pdf_params= [0.,1.]
@@ -358,15 +358,15 @@ if __name__=='__main__':
                         symmetric,plotfilename=plotfilename,
                         nsamples=100000)
     if sys.argv[1] == 'hmc':
-        print "Testing HMC sampling..."
+        print("Testing HMC sampling...")
         if sys.argv[2] == 'gaussian':
             obj_func= minuslngaussian
             grad_func= grad_minuslngaussian
             pdf_params= [0.,1.]
             plotfilename='hmc_gaussian.png'
         else:
-            print "This function has not been implemented (yet)"
-            print "Returning..."
+            print("This function has not been implemented (yet)")
+            print("Returning...")
             sys.exit(-1)
         test_hmc(0,20,.05,obj_func,grad_func,pdf_params,
                  plotfilename=plotfilename,nsamples=10000)
